@@ -1,3 +1,4 @@
+# Expected rounds played before going broke
 
 import random
 import matplotlib.pyplot as plt
