@@ -85,8 +85,8 @@ tennis_level_cpd = TabularCPD(
                             'tennis_level',
                              3,
                              [[1.0, 0.5, 0.2, 0, 0, 0],
-                              [0, 0.5, 0.6, 1, 0.4, 0.15],
-                              [0, 0, 0.2, 0, 0.6, 0.75]],
+                              [0, 0.5, 0.6, 1, 0.4, 0.2],
+                              [0, 0, 0.2, 0, 0.6, 0.8]],
                              evidence=['prior_tennis_level', 'practises_per_week'],
                              evidence_card=[2, 3],
                              state_names={
@@ -108,7 +108,7 @@ money_states = ["0", "600"]
 freetime_states = ["10", "18", "25"]
 tennis_states = ["beginner", "mid", "advanced"]
 
-score_money = {"0": 0, "600": 2}
+score_money = {"0": 0, "600": 0.3}
 score_freetime = {"10": 0, "18": 1, "25": 2}
 score_tennis = {"beginner": 0, "mid": 2, "advanced": 4}
 
@@ -144,3 +144,43 @@ G.add_cpds(money_saved_cpd, practises_per_week_cpd, prior_freetime_pd, prior_ten
 
 # print(G.get_cpds("utility"))
 print(G.check_model())
+
+
+
+
+from pgmpy.inference import VariableElimination
+import numpy as np
+
+# --- add missing edges ---
+G.add_edge("money_saved", "utility")
+G.add_edge("freetime", "utility")
+G.add_edge("tennis_level", "utility")
+
+# --- add missing prior for the root decision variable (required by pgmpy) ---
+join_cpd = TabularCPD(
+    "join_ntnui_tennis", 2,
+    [[0.5], [0.5]],
+    state_names={"join_ntnui_tennis": ["False", "True"]}
+)
+
+G.add_cpds(join_cpd)  # plus your other CPDs already added
+assert G.check_model()
+
+infer = VariableElimination(G)
+
+def expected_utility(join_value: str) -> float:
+    q = infer.query(["utility"], evidence={"join_ntnui_tennis": join_value}, show_progress=False)
+    u_states = np.array([float(s) for s in q.state_names["utility"]])  # "0".."8" -> numbers
+    return float(np.dot(u_states, q.values))
+
+print("EU(join=False):", expected_utility("False"))
+print("EU(join=True): ", expected_utility("True"))
+
+
+from networkx.drawing.nx_pydot import to_pydot
+
+dot = to_pydot(G)
+dot.write_png("network.png")
+print("Wrote network.png")
+
+print(tennis_level_cpd)
