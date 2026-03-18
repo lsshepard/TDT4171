@@ -47,7 +47,8 @@ def d_sigmoid(y):
     """
     Derivative of the sigmoid activation function - input y is output of sigmoid(x)
     """
-    return np.exp(-y)/np.power((1+np.exp(-y)), 2)
+    # return np.exp(-y)/np.power((1+np.exp(-y)), 2)
+    return y * (1-y)
 
 
 def linear(x):
@@ -102,7 +103,6 @@ def backward(y_hat, y, hidden_activations, x, out_W):
     """
     d_L_d_output = 2*(y_hat - y).squeeze()
     d_L_d_pre_activations = (d_L_d_output * out_W.squeeze() * d_sigmoid(hidden_activations).reshape(2, ))
-    # print('d_L_d_pre_activations', (d_L_d_output * out_W.squeeze()).shape, d_sigmoid(hidden_activations).reshape(2, ).shape)
 
     # gradients wrt output weights
     d_L_d_ow = (d_L_d_output * hidden_activations).reshape(2, 1)  # Size (2,1)
