@@ -40,16 +40,14 @@ def sigmoid(x):
     """
     Sigmoid activation function
     """
-    # TODO implement sigmoid activation function
-    return x
+    return 1/(1+np.exp(-x))
 
 
 def d_sigmoid(y):
     """
     Derivative of the sigmoid activation function - input y is output of sigmoid(x)
     """
-    # TODO implement derivative of sigmoid activation function
-    return y
+    return np.exp(-y)/np.power((1+np.exp(-y)), 2)
 
 
 def linear(x):
@@ -79,8 +77,7 @@ def feed_forward(x, hidden_W, hidden_b, out_W, out_b):
     """
 
     # Hidden layer calculations
-    # TODO implement the forward pass through the hidden layer
-    hidden_activations = x
+    hidden_activations = sigmoid(x @ hidden_W + hidden_b)
 
     # Output calculations
     out_linear = hidden_activations @ out_W + out_b
@@ -103,17 +100,18 @@ def backward(y_hat, y, hidden_activations, x, out_W):
     :returns: the derivative updates to hidden_W, hidden_b, out_W and out_b
 
     """
-
-    # TODO implement backpropagation
+    d_L_d_output = 2*(y_hat - y).squeeze()
+    d_L_d_pre_activations = (d_L_d_output * out_W.squeeze() * d_sigmoid(hidden_activations).reshape(2, ))
+    # print('d_L_d_pre_activations', (d_L_d_output * out_W.squeeze()).shape, d_sigmoid(hidden_activations).reshape(2, ).shape)
 
     # gradients wrt output weights
-    d_L_d_ow = 0  # Size (2,1)
+    d_L_d_ow = (d_L_d_output * hidden_activations).reshape(2, 1)  # Size (2,1)
     # gradients wrt output bias
-    d_L_d_ob = 0  # Size (1,)
+    d_L_d_ob = d_L_d_output.reshape(1, )  # Size (1,)
     # gradients wrt hidden weights
-    d_L_d_hw = 0  # Size (2,2)
+    d_L_d_hw = (d_L_d_pre_activations * x)  # Size (2,2)
     # gradients wrt hidden bias
-    d_L_d_hb = 0  # Size (2,)
+    d_L_d_hb = d_L_d_pre_activations # Size (2,)
 
     return d_L_d_hw, d_L_d_hb, d_L_d_ow, d_L_d_ob
 
@@ -148,11 +146,10 @@ def train(x_train, y_train, neural_net, learning_rate=0.01, epochs=10, batch_siz
                                                               out_W=out_W)
 
             # Update parameters
-            # TODO update parameters using gradients returned above and learning rate
-            hidden_W = hidden_W
-            hidden_b = hidden_b
-            out_W = out_W
-            out_b = out_b
+            hidden_W = hidden_W - d_L_d_hw * learning_rate
+            hidden_b = hidden_b - d_L_d_hb * learning_rate
+            out_W = out_W - d_L_d_ow * learning_rate
+            out_b = out_b - d_L_d_ob * learning_rate
 
         print(f"Epoch {e+1}: mse {np.mean(errors):4f}", end="\n")
 
@@ -178,7 +175,7 @@ if __name__ == "__main__":
     # This is the neural net
     neural_net = (hidden_weights, hidden_bias, out_weights, out_bias)
     # Training
-    train_mse, neural_net_trained = train(X_train, y_train, neural_net, learning_rate=0.2, epochs=100,
+    train_mse, neural_net_trained = train(X_train, y_train, neural_net, learning_rate=0.015, epochs=100,
                                           batch_size=1)
 
     # Calculate mse on test data
